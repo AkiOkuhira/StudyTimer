@@ -1,0 +1,14 @@
+version: '3.9'
+services:
+  bot:
+    build: .
+    ports:
+      - '8989:8999'
+    volumes:
+      - ./src:/app/src
+    environment:
+      - APPLICATION_ID=${APPLICATION_ID}
+      - TOKEN=${TOKEN}
+      - PUBLIC_KEY=${PUBLIC_KEY}
+      - GUILD_ID=${GUILD_ID}
+    tty: true
