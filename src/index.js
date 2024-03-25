@@ -38,12 +38,25 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
     console.log(interaction.data.name);
     //コマンドの処理
     if (interaction.data.name == 'pomodoro') {
-      return res.send({
+      const minutes = interaction.data.options.find(option => option.name === 'studytime').value;
+      res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-          content: `pomodoro ${interaction.member.user.username}!`,
+          content: `勉強開始、${minutes}分後休憩だよ。`,
         },
       });
+      // レスポンスを指定した分数だけ遅延させる
+      setTimeout(async () => {
+        try {
+          // https://discord.com/developers/docs/resources/channel#create-message
+          let res = await discord_api.post(`/channels/${interaction.channel_id}/messages`, {
+            content: `休憩だよ～`,
+          });
+          console.log(res.data);
+        } catch (e) {
+          console.log(e);
+        }
+      }, minutes * 60000);  // minutes * 60000ミリ秒
     }
   }
 });
@@ -54,7 +67,14 @@ app.get('/register_commands', async (req, res) => {
     {
       name: 'pomodoro',
       description: 'pomodoro',
-      options: [],
+      options: [
+        {
+          name: 'studytime',
+          type: 4, // 4は整数型を表します
+          description: 'Set the timer in minutes',
+          required: true,
+        },
+      ],
     }
   ];
   //触らない　httpに出るメッセージの設定
