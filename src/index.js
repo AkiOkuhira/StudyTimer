@@ -1,3 +1,4 @@
+//触らない　envファイルとかの設定
 require('dotenv').config();
 const APPLICATION_ID = process.env.APPLICATION_ID;
 const TOKEN = process.env.TOKEN;
@@ -35,6 +36,7 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
 
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
     console.log(interaction.data.name);
+    //コマンドの処理
     if (interaction.data.name == 'yo') {
       return res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
@@ -72,6 +74,7 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
   }
 });
 
+//登録するコマンド
 app.get('/register_commands', async (req, res) => {
   let slash_commands = [
     {
@@ -85,6 +88,7 @@ app.get('/register_commands', async (req, res) => {
       options: [],
     },
   ];
+  //触らない　httpに出るメッセージの設定
   try {
     // api docs - https://discord.com/developers/docs/interactions/application-commands#create-global-application-command
     let discord_response = await discord_api.put(
