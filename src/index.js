@@ -37,37 +37,11 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
     console.log(interaction.data.name);
     //コマンドの処理
-    if (interaction.data.name == 'yo') {
+    if (interaction.data.name == 'pomodoro') {
       return res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-          content: `yo ${interaction.member.user.username}!`,
-        },
-      });
-    }
-
-    if (interaction.data.name == 'dm') {
-      // https://discord.com/developers/docs/resources/user#create-dm
-      let c = (
-        await discord_api.post(`/users/@me/channels`, {
-          recipient_id: interaction.member.user.id,
-        })
-      ).data;
-      try {
-        // https://discord.com/developers/docs/resources/channel#create-message
-        let res = await discord_api.post(`/channels/${c.id}/messages`, {
-          content:
-            'Yo! I got your slash command. I am not able to respond to DMs just slash commands.',
-        });
-        console.log(res.data);
-      } catch (e) {
-        console.log(e);
-      }
-
-      return res.send({
-        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-        data: {
-          content: '👍',
+          content: `pomodoro ${interaction.member.user.username}!`,
         },
       });
     }
@@ -78,15 +52,10 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
 app.get('/register_commands', async (req, res) => {
   let slash_commands = [
     {
-      name: 'yo',
-      description: 'replies with yo!',
+      name: 'pomodoro',
+      description: 'pomodoro',
       options: [],
-    },
-    {
-      name: 'dm',
-      description: 'sends user a DM',
-      options: [],
-    },
+    }
   ];
   //触らない　httpに出るメッセージの設定
   try {
