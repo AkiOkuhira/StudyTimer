@@ -9,17 +9,17 @@ console.log('APPLICATION_ID:', APPLICATION_ID);
 console.log('TOKEN:', TOKEN);
 console.log('PUBLIC_KEY:', PUBLIC_KEY);
 console.log('GUILD_ID:', GUILD_ID);
-
-const axios = require('axios');
-const express = require('express');
+// 必要なライブラリの読み込み
+const axios = require('axios');// HTTPクライアント
+const express = require('express');// Webフレームワーク
 const {
   InteractionType,
   InteractionResponseType,
   verifyKeyMiddleware,
-} = require('discord-interactions');
-
+} = require('discord-interactions');// Discordのインタラクションに関するライブラリ
+// Expressアプリケーションを作成します
 const app = express();
-
+// Discord APIへの接続設定を行います
 const discord_api = axios.create({
   baseURL: 'https://discord.com/api/',
   timeout: 3000,
@@ -30,22 +30,25 @@ const discord_api = axios.create({
     Authorization: `Bot ${TOKEN}`,
   },
 });
-
+// インタラクションエンドポイントを設定します
 app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
-  const interaction = req.body;
+  const interaction = req.body;// インタラクションデータを取得します
 
+  // インタラクションの種類がアプリケーションコマンドの場合
   if (interaction.type === InteractionType.APPLICATION_COMMAND) {
-    console.log(interaction.data.name);
-    //コマンドの処理
+    console.log(interaction.data.name);//コマンド名をコンソールに出力します
+
+    // 'pomodoro'コマンドの処理
     if (interaction.data.name == 'pomodoro') {
-      const minutes = interaction.data.options.find(option => option.name === 'studytime').value;
+      const studyminites = interaction.data.options.find(option => option.name === 'studytime').value;
+      const breakminites = interaction.data.options.find(option => option.name === 'breaktime').value;
       res.send({
         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
         data: {
-          content: `勉強開始、${minutes}分後休憩だよ。`,
+          content: `勉強開始、${studyminites}分後休憩だよ。`,
         },
       });
-      // レスポンスを指定した分数だけ遅延させる
+      // 指定した時間後にメッセージを送信
       setTimeout(async () => {
         try {
           // https://discord.com/developers/docs/resources/channel#create-message
@@ -56,7 +59,21 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
         } catch (e) {
           console.log(e);
         }
-      }, minutes * 60000);  // minutes * 60000ミリ秒
+      }, studyminites * 60000);  // studyminites * 60000ミリ秒
+      
+      setTimeout(async () => {
+        try {
+          // https://discord.com/developers/docs/resources/channel#create-message
+          let res = await discord_api.post(`/channels/${interaction.channel_id}/messages`, {
+            content: `勉強だよ～`,
+          });
+          console.log(res.data);
+        } catch (e) {
+          console.log(e);
+        }
+      }, breakminites * 60000);  // studyminites * 60000ミリ秒
+
+      
     }
   }
 });
@@ -71,8 +88,14 @@ app.get('/register_commands', async (req, res) => {
         {
           name: 'studytime',
           type: 4, // 4は整数型を表します
-          description: 'Set the timer in minutes',
-          required: true,
+          description: '勉強時間を設定',
+          required: false,
+        },
+        {
+          name: 'breaktime',
+          type: 4, // 4は整数型を表します
+          description: '休憩時間を設定',
+          required: false,
         },
       ],
     }
@@ -83,7 +106,7 @@ app.get('/register_commands', async (req, res) => {
     let discord_response = await discord_api.put(
       `/applications/${APPLICATION_ID}/guilds/${GUILD_ID}/commands`,
       slash_commands
-    );
+    );  
     console.log(discord_response.data);
     return res.send('commands have been registered');
   } catch (e) {
