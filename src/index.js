@@ -11,11 +11,7 @@ console.log('GUILD_ID:', GUILD_ID);
 
 const axios = require('axios');
 const express = require('express');
-const {
-  InteractionType,
-  InteractionResponseType,
-  verifyKeyMiddleware,
-} = require('discord-interactions');
+const { InteractionType, InteractionResponseType, verifyKeyMiddleware } = require('discord-interactions');
 
 const app = express();
 
@@ -29,6 +25,37 @@ const discord_api = axios.create({
     Authorization: `Bot ${TOKEN}`,
   },
 });
+
+const sleep = (sec) => new Promise((resolve) => setTimeout(resolve, sec * 60000));
+
+const sendMessage = (interaction, msg) => {
+  return discord_api.post(`/channels/${interaction.channel_id}/messages`, {
+    content: msg,
+  });
+};
+
+const pomodoro = async (interaction, studytime, breaktime, times) => {
+  let i = 1;
+
+  while (true) {
+    await sendMessage(
+      interaction,
+      times !== i ? `${i}回目 ${studytime}分間勉強開始!!` : `${i}回目 ${studytime}分間勉強開始!! 最後です`
+    );
+
+    await sleep(studytime);
+
+    if (times === i) break;
+
+    await sendMessage(interaction, `${breaktime}分間休憩☕`);
+
+    await sleep(breaktime);
+
+    i++;
+  }
+
+  return sendMessage(interaction, '勉強終了!! お疲れ様です');
+};
 
 app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
   const interaction = req.body;
@@ -54,8 +81,7 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
       try {
         // https://discord.com/developers/docs/resources/channel#create-message
         let res = await discord_api.post(`/channels/${c.id}/messages`, {
-          content:
-            'Yo! I got your slash command. I am not able to respond to DMs just slash commands.',
+          content: 'Yo! I got your slash command. I am not able to respond to DMs just slash commands.',
         });
         console.log(res.data);
       } catch (e) {
@@ -68,6 +94,24 @@ app.post('/interactions', verifyKeyMiddleware(PUBLIC_KEY), async (req, res) => {
           content: '👍',
         },
       });
+    }
+
+    if (interaction.data.name == 'test') {
+      const studytime = interaction.data.options.find((option) => option.name === 'studytime').value;
+      const breaktime = interaction.data.options.find((option) => option.name === 'breaktime').value;
+
+      try {
+        res.send({
+          type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+          data: {
+            content: '',
+          },
+        });
+
+        return pomodoro(interaction, studytime, breaktime, 2);
+      } catch (e) {
+        console.log(e);
+      }
     }
   }
 });
@@ -83,6 +127,24 @@ app.get('/register_commands', async (req, res) => {
       name: 'dm',
       description: 'sends user a DM',
       options: [],
+    },
+    {
+      name: 'test',
+      description: 'test command',
+      options: [
+        {
+          name: 'studytime',
+          type: 4,
+          description: '勉強時間を設定',
+          required: true,
+        },
+        {
+          name: 'breaktime',
+          type: 4,
+          description: '休憩時間を設定',
+          required: true,
+        },
+      ],
     },
   ];
   try {
